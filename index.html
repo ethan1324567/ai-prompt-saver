@@ -39,13 +39,14 @@
 
     select, input, textarea {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
+      padding: 10px 12px; /* Adjusted horizontal padding */
+      margin-bottom: 16px;
       border: 1px solid #333;
       border-radius: 4px;
       background-color: #2c2c2c;
       color: #e0e0e0;
       font-size: 1rem;
+      box-sizing: border-box; /* Ensure padding is included in width */
     }
 
     textarea {
@@ -54,6 +55,7 @@
     }
 
     button {
+      width: 100%;
       padding: 12px;
       background-color: #bb86fc;
       color: #121212;
@@ -62,6 +64,7 @@
       font-size: 1rem;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      margin-bottom: 16px;
     }
 
     button:hover {
@@ -132,6 +135,7 @@
 
     .export-import-buttons button {
       flex: 1;
+      margin-bottom: 0; /* Remove margin for buttons in this container */
     }
   </style>
 </head>
