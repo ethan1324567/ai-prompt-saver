@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Saver</title>
+  <style>
+    /* Dark mode theme */
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ffffff;
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #bb86fc;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #2c2c2c;
+      color: #e0e0e0;
+      font-size: 1rem;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    button {
+      padding: 12px;
+      background-color: #bb86fc;
+      color: #121212;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #9a67ea;
+    }
+
+    .prompt-card {
+      background-color: #2c2c2c;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border-left: 4px solid #bb86fc;
+      position: relative;
+    }
+
+    .prompt-card h3 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 1.25rem;
+    }
+
+    .prompt-card p {
+      margin: 8px 0;
+      color: #e0e0e0;
+    }
+
+    .prompt-card small {
+      color: #bb86fc;
+      font-size: 0.875rem;
+    }
+
+    .prompt-card pre {
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .copy-button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: #03dac6;
+      color: #121212;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .copy-button:hover {
+      background-color: #018786;
+    }
+
+    #custom-ai-input {
+      display: none; /* Hidden by default */
+    }
+
+    .export-import-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .export-import-buttons button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>AI Prompt Saver</h1>
+  <div class="container">
+    <!-- Input Form -->
+    <label for="ai-select">Select AI:</label>
+    <select id="ai-select" onchange="toggleCustomAIInput()">
+      <option value="chatgpt">ChatGPT</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="qwen">Qwen</option>
+      <option value="claud">Claud</option>
+      <option value="other">Other</option>
+    </select>
+
+    <div id="custom-ai-input">
+      <label for="custom-ai">Custom AI Name:</label>
+      <input type="text" id="custom-ai" placeholder="Enter the AI name">
+    </div>
+
+    <label for="title">Title:</label>
+    <input type="text" id="title" placeholder="Enter a title for your prompt">
+
+    <label for="description">Description:</label>
+    <textarea id="description" placeholder="Enter a brief description"></textarea>
+
+    <label for="prompt">Prompt:</label>
+    <textarea id="prompt" placeholder="Enter your AI prompt"></textarea>
+
+    <button onclick="savePrompt()">Save Prompt</button>
+
+    <!-- Saved Prompts Display -->
+    <div id="saved-prompts">
+      <h2>Saved Prompts</h2>
+      <!-- Prompts will appear here dynamically -->
+    </div>
+
+    <!-- Export and Import Buttons -->
+    <div class="export-import-buttons">
+      <button onclick="exportPrompts()">Export Prompts</button>
+      <button onclick="importPrompts()">Import Prompts</button>
+    </div>
+  </div>
+
+  <script>
+    function toggleCustomAIInput() {
+      const aiSelect = document.getElementById('ai-select');
+      const customAIInput = document.getElementById('custom-ai-input');
+      if (aiSelect.value === 'other') {
+        customAIInput.style.display = 'block';
+      } else {
+        customAIInput.style.display = 'none';
+      }
+    }
+
+    function savePrompt() {
+      const aiSelect = document.getElementById('ai-select');
+      const customAI = document.getElementById('custom-ai').value;
+      const ai = aiSelect.value === 'other' ? customAI : aiSelect.options[aiSelect.selectedIndex].text;
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const prompt = document.getElementById('prompt').value;
+
+      if (!title || !description || !prompt || (aiSelect.value === 'other' && !customAI)) {
+        alert('Please fill out all fields.');
+        return;
+      }
+
+      const promptCard = document.createElement('div');
+      promptCard.className = 'prompt-card';
+      promptCard.innerHTML = `
+        <h3>${title}</h3>
+        <small>AI: ${ai}</small>
+        <p>${description}</p>
+        <pre>${prompt}</pre>
+        <button class="copy-button" data-prompt="${prompt.replace(/"/g, '&quot;')}">Copy Prompt</button>
+      `;
+
+      // Add click event listener to the copy button
+      const copyButton = promptCard.querySelector('.copy-button');
+      copyButton.addEventListener('click', () => {
+        const promptText = copyButton.getAttribute('data-prompt');
+        copyPrompt(promptText);
+      });
+
+      document.getElementById('saved-prompts').appendChild(promptCard);
+
+      // Clear the form
+      document.getElementById('title').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('prompt').value = '';
+      if (aiSelect.value === 'other') {
+        document.getElementById('custom-ai').value = '';
+      }
+    }
+
+    function copyPrompt(promptText) {
+      navigator.clipboard.writeText(promptText)
+        .then(() => alert('Prompt copied to clipboard!'))
+        .catch(() => alert('Failed to copy prompt.'));
+    }
+
+    function exportPrompts() {
+      const prompts = [];
+      const promptCards = document.querySelectorAll('.prompt-card');
+      promptCards.forEach(card => {
+        const title = card.querySelector('h3').textContent;
+        const ai = card.querySelector('small').textContent.replace('AI: ', '');
+        const description = card.querySelector('p').textContent;
+        const prompt = card.querySelector('pre').textContent;
+        prompts.push({ title, ai, description, prompt });
+      });
+
+      if (prompts.length === 0) {
+        alert('No prompts to export.');
+        return;
+      }
+
+      const json = JSON.stringify(prompts, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'prompts.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importPrompts() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const prompts = JSON.parse(e.target.result);
+            prompts.forEach(prompt => {
+              const promptCard = document.createElement('div');
+              promptCard.className = 'prompt-card';
+              promptCard.innerHTML = `
+                <h3>${prompt.title}</h3>
+                <small>AI: ${prompt.ai}</small>
+                <p>${prompt.description}</p>
+                <pre>${prompt.prompt}</pre>
+                <button class="copy-button" data-prompt="${prompt.prompt.replace(/"/g, '&quot;')}">Copy Prompt</button>
+              `;
+
+              // Add click event listener to the copy button
+              const copyButton = promptCard.querySelector('.copy-button');
+              copyButton.addEventListener('click', () => {
+                const promptText = copyButton.getAttribute('data-prompt');
+                copyPrompt(promptText);
+              });
+
+              document.getElementById('saved-prompts').appendChild(promptCard);
+            });
+            alert('Prompts imported successfully!');
+          } catch (error) {
+            alert('Failed to import prompts. Invalid file format.');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+  </script>
+</body>
+</html>
