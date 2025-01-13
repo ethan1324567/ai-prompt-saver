@@ -184,6 +184,64 @@
   </div>
 
   <script>
+    // Helper functions for working with cookies
+    function setCookie(name, value, days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      const expires = `expires=${date.toUTCString()}`;
+      document.cookie = `${name}=${encodeURIComponent(value)};${expires};path=/`;
+    }
+
+    function getCookie(name) {
+      const cookieName = `${name}=`;
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i].trim();
+        if (cookie.startsWith(cookieName)) {
+          return decodeURIComponent(cookie.substring(cookieName.length));
+        }
+      }
+      return null;
+    }
+
+    // Save prompts to cookies
+    function savePromptsToCookies(prompts) {
+      setCookie('savedPrompts', JSON.stringify(prompts), 30); // Save for 30 days
+    }
+
+    // Load prompts from cookies
+    function loadPromptsFromCookies() {
+      const promptsCookie = getCookie('savedPrompts');
+      if (promptsCookie) {
+        const prompts = JSON.parse(promptsCookie);
+        prompts.forEach(prompt => {
+          addPromptToUI(prompt);
+        });
+      }
+    }
+
+    // Add a prompt to the UI
+    function addPromptToUI(prompt) {
+      const promptCard = document.createElement('div');
+      promptCard.className = 'prompt-card';
+      promptCard.innerHTML = `
+        <h3>${prompt.title}</h3>
+        <small>AI: ${prompt.ai}</small>
+        <p>${prompt.description}</p>
+        <pre>${prompt.prompt}</pre>
+        <button class="copy-button" data-prompt="${prompt.prompt.replace(/"/g, '&quot;')}">Copy Prompt</button>
+      `;
+
+      // Add click event listener to the copy button
+      const copyButton = promptCard.querySelector('.copy-button');
+      copyButton.addEventListener('click', () => {
+        const promptText = copyButton.getAttribute('data-prompt');
+        copyPrompt(promptText);
+      });
+
+      document.getElementById('saved-prompts').appendChild(promptCard);
+    }
+
     function toggleCustomAIInput() {
       const aiSelect = document.getElementById('ai-select');
       const customAIInput = document.getElementById('custom-ai-input');
@@ -207,24 +265,14 @@
         return;
       }
 
-      const promptCard = document.createElement('div');
-      promptCard.className = 'prompt-card';
-      promptCard.innerHTML = `
-        <h3>${title}</h3>
-        <small>AI: ${ai}</small>
-        <p>${description}</p>
-        <pre>${prompt}</pre>
-        <button class="copy-button" data-prompt="${prompt.replace(/"/g, '&quot;')}">Copy Prompt</button>
-      `;
+      const newPrompt = { title, ai, description, prompt };
+      addPromptToUI(newPrompt);
 
-      // Add click event listener to the copy button
-      const copyButton = promptCard.querySelector('.copy-button');
-      copyButton.addEventListener('click', () => {
-        const promptText = copyButton.getAttribute('data-prompt');
-        copyPrompt(promptText);
-      });
-
-      document.getElementById('saved-prompts').appendChild(promptCard);
+      // Save to cookies
+      const promptsCookie = getCookie('savedPrompts');
+      const prompts = promptsCookie ? JSON.parse(promptsCookie) : [];
+      prompts.push(newPrompt);
+      savePromptsToCookies(prompts);
 
       // Clear the form
       document.getElementById('title').value = '';
@@ -242,21 +290,13 @@
     }
 
     function exportPrompts() {
-      const prompts = [];
-      const promptCards = document.querySelectorAll('.prompt-card');
-      promptCards.forEach(card => {
-        const title = card.querySelector('h3').textContent;
-        const ai = card.querySelector('small').textContent.replace('AI: ', '');
-        const description = card.querySelector('p').textContent;
-        const prompt = card.querySelector('pre').textContent;
-        prompts.push({ title, ai, description, prompt });
-      });
-
-      if (prompts.length === 0) {
+      const promptsCookie = getCookie('savedPrompts');
+      if (!promptsCookie) {
         alert('No prompts to export.');
         return;
       }
 
+      const prompts = JSON.parse(promptsCookie);
       const json = JSON.stringify(prompts, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -280,25 +320,14 @@
           try {
             const prompts = JSON.parse(e.target.result);
             prompts.forEach(prompt => {
-              const promptCard = document.createElement('div');
-              promptCard.className = 'prompt-card';
-              promptCard.innerHTML = `
-                <h3>${prompt.title}</h3>
-                <small>AI: ${prompt.ai}</small>
-                <p>${prompt.description}</p>
-                <pre>${prompt.prompt}</pre>
-                <button class="copy-button" data-prompt="${prompt.prompt.replace(/"/g, '&quot;')}">Copy Prompt</button>
-              `;
-
-              // Add click event listener to the copy button
-              const copyButton = promptCard.querySelector('.copy-button');
-              copyButton.addEventListener('click', () => {
-                const promptText = copyButton.getAttribute('data-prompt');
-                copyPrompt(promptText);
-              });
-
-              document.getElementById('saved-prompts').appendChild(promptCard);
+              addPromptToUI(prompt);
             });
+
+            // Save to cookies
+            const existingPrompts = getCookie('savedPrompts') ? JSON.parse(getCookie('savedPrompts')) : [];
+            const updatedPrompts = [...existingPrompts, ...prompts];
+            savePromptsToCookies(updatedPrompts);
+
             alert('Prompts imported successfully!');
           } catch (error) {
             alert('Failed to import prompts. Invalid file format.');
@@ -308,6 +337,9 @@
       };
       input.click();
     }
+
+    // Load saved prompts when the page loads
+    window.onload = loadPromptsFromCookies;
   </script>
 </body>
 </html>
